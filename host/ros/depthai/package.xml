@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package>
+  <name>depthai_node</name>
+  <version>1.0.1</version>
+  <description>Driver node for DepthAi stereo vision and ai sensors</description>
+  <maintainer email="adrian.berindei@gmail.com">Adrian Berindei</maintainer>
+  <license>MIT</license>
+  <url type="website">https://luxonis.com/depthai</url>
+  <author email="adrian.berindei@gmail.com">Adrian Berindei</author>
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>message_generation</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>boost</build_depend>
+
+  <run_depend>roscpp</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>boost</run_depend>
+  <run_depend>curl</run_depend>
+
+</package>

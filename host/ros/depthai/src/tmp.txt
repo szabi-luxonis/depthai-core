@@ -1,0 +1,24 @@
+            // if(ndim == 2)
+            // {
+            //     if(packet->elem_size = 2)
+            //     {
+            //         cv::Mat bgrImg(shape[0], shape[1], CV_16UC3, packet->getData(),strides[0]);
+
+            //         cvImg.image = bgrImg;
+            //         encoding = "bgr16";
+            //     }
+            //     else
+            //     {
+            //         cv::Mat bgrImg(shape[0], shape[1], CV_8UC3, packet->getData(),strides[0]);
+
+            //         cvImg.image = bgrImg;
+            //         encoding = "bgr8";
+            //     }
+            // }
+            // else
+            // {
+            //     cv::Mat bgrImg(shape[0], shape[1], CV_16UC3, packet->getData(),strides[0]);
+
+            //     cvImg.image = rgbImg;
+            //     encoding = "bgr8";
+            // }
