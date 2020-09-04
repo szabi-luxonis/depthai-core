@@ -44,6 +44,8 @@ public:
 
     std::map<std::string, int> get_nn_to_depth_bbox_mapping();
 
+    std::string get_device_model();
+
 private:
     
     std::vector<uint8_t> patched_cmd;
@@ -78,7 +80,7 @@ private:
 
     std::shared_ptr<CNNHostPipeline> gl_result = nullptr;
 
-
+    std::string device_model;
     std::string config_backup;
     std::string cmd_backup;
     std::string usb_device_backup;
@@ -103,6 +105,7 @@ private:
         { "max_w", 0 },
         { "max_h", 0 },
     };
+
 
     XLinkHandler_t g_xlink_device_handler = {};
 

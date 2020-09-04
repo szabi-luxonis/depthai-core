@@ -108,7 +108,6 @@ Device::~Device(){
 }
 
 
-
 void Device::wdog_thread(std::chrono::milliseconds& wd_timeout)
 {
     std::cout << "watchdog started " << std::endl;
@@ -286,6 +285,7 @@ bool Device::init_device(
         printf("EEPROM data:");
         if (version == -1) {
             printf(" invalid / unprogrammed\n");
+            device_model = "NA";
         } else {
             printf(" valid (v%d)\n", version);
             std::string board_name;
@@ -318,6 +318,7 @@ bool Device::init_device(
                 printf(" %11.6f,", calib.at(i));
                 if (i % 3 == 2) printf("\n");
             }
+            device_model = board_name.empty() ? "<NOT-SET>" : board_name.c_str();
         }
 
 
@@ -852,4 +853,10 @@ void Device::send_disparity_confidence_threshold(uint8_t confidence){
 
 std::map<std::string, int> Device::get_nn_to_depth_bbox_mapping(){
     return nn_to_depth_mapping;
+}
+
+
+std::string Device::get_device_model()
+{
+    return device_model;
 }
