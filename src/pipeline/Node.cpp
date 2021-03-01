@@ -15,6 +15,11 @@ tl::optional<OpenVINO::Version> Node::getRequiredOpenVINOVersion() {
     return tl::nullopt;
 }
 
+const Pipeline Node::getParentPipeline() const {
+    Pipeline pipeline(std::shared_ptr<PipelineImpl>{parent});
+    return pipeline;
+}
+
 Pipeline Node::getParentPipeline() {
     Pipeline pipeline(std::shared_ptr<PipelineImpl>{parent});
     return pipeline;
@@ -64,6 +69,28 @@ void Node::Output::link(const Input& in) {
 void Node::Output::unlink(const Input& in) {
     // Call unlink of pipeline parents pipeline
     parent.getParentPipeline().unlink(*this, in);
+}
+
+void Node::Input::setBlocking(bool blocking) {
+    this->blocking = blocking;
+}
+
+bool Node::Input::getBlocking() const {
+    if(blocking) {
+        return *blocking;
+    }
+    return defaultBlocking;
+}
+
+void Node::Input::setQueueSize(int size) {
+    this->queueSize = size;
+}
+
+int Node::Input::getQueueSize() const {
+    if(queueSize) {
+        return *queueSize;
+    }
+    return defaultQueueSize;
 }
 
 }  // namespace dai

@@ -15,32 +15,24 @@ namespace dai {
 // Anonymous namespace to hide 'Preloader' symbol and variable as its not needed to be visible to other compilation units
 namespace {
 
-    // Doing early static initialization hits this stage faster than some libraries initialize their global static members
+// Doing early static initialization hits this stage faster than some libraries initialize their global static members
 
-    // Preloader uses static global object constructor (works only for shared libraries)
-    // to execute some code upon final executable launch  or library import
-    // Preloader
-    // struct Preloader {
-    //     Preloader(){
-    //         initialize();
-    //     }
-    // } preloader;
-
-    bool initialized = false;
+// Preloader uses static global object constructor (works only for shared libraries)
+// to execute some code upon final executable launch  or library import
+// Preloader
+// struct Preloader {
+//     Preloader(){
+//         initialize();
+//     }
+// } preloader;
 
 }  // namespace
 
-std::mutex initMutex;
 bool initialize() {
-    // To protect from multiple initializations at the same time
-    std::lock_guard<std::mutex> lock(initMutex);
+    // atomic bool for checking whether depthai was already initialized
+    static std::atomic<bool> initialized{false};
 
-    // Initialize only once
-    if(!initialized) {
-        initialized = true;
-    } else {
-        return true;
-    }
+    if(initialized.exchange(true)) return true;
 
     // Set global logging level from ENV variable 'DEPTHAI_LEVEL'
     // Taken from spdlog, to replace with DEPTHAI_LEVEL instead of SPDLOG_LEVEL
@@ -48,7 +40,15 @@ bool initialize() {
     auto env_val = spdlog::details::os::getenv("DEPTHAI_LEVEL");
     if(!env_val.empty()) {
         spdlog::cfg::helpers::load_levels(env_val);
+    } else {
+        // Otherwise set default level to WARN
+        spdlog::set_level(spdlog::level::warn);
     }
+
+    // auto debugger_val = spdlog::details::os::getenv("DEPTHAI_DEBUGGER");
+    // if(!debugger_val.empty()){
+    //    // TODO(themarpe) - instruct Device class that first available device is also a booted device
+    // }
 
     // Executed at library load time
 

@@ -3,33 +3,26 @@ hunter_config(
     VERSION "3.9.1"
     URL "https://github.com/nlohmann/json/archive/v3.9.1.tar.gz"
     SHA1 "f8a20a7e19227906d77de0ede97468fbcfea03e7"
-    CMAKE_ARGS
-        CMAKE_POSITION_INDEPENDENT_CODE=ON
 )
 
 hunter_config(
     XLink
-    VERSION "luxonis-2020.2-mx_id_compatible"
-    URL "https://github.com/luxonis/XLink/archive/04bf4dc9be5da5bd471f6df94dbbe995e425d7b1.tar.gz"
-    SHA1 "5aef4de522ae1f0c8a9493158f1bf3a8332cd588"
-    CMAKE_ARGS
-        CMAKE_POSITION_INDEPENDENT_CODE=ON
+    VERSION "luxonis-2021.2-develop"
+    URL "https://github.com/luxonis/XLink/archive/ee361ecba950335390ad539e509f8ab96313b6b4.tar.gz"
+    SHA1 "72108319bf2289d91157a3933663ed5fb2b6eb18"
 )
 
 hunter_config(
     BZip2
     VERSION "1.0.8-p0"
-    CMAKE_ARGS
-        CMAKE_POSITION_INDEPENDENT_CODE=ON
 )
 
 hunter_config(
     spdlog
-    VERSION "1.8.1"
-    URL "https://github.com/gabime/spdlog/archive/v1.8.1.tar.gz"
-    SHA1 "a0fe45cfb77cb4201e9a0e40325c1792dd434a28"
+    VERSION "1.8.2"
+    URL "https://github.com/gabime/spdlog/archive/v1.8.2.tar.gz"
+    SHA1 "4437f350ca7fa89a0cd8faca1198afb36823f775"
     CMAKE_ARGS
-        CMAKE_POSITION_INDEPENDENT_CODE=ON
         SPDLOG_BUILD_EXAMPLE=OFF
         SPDLOG_FMT_EXTERNAL=OFF
 )
@@ -37,11 +30,10 @@ hunter_config(
 # libarchive, luxonis fork
 hunter_config(
     libarchive
-    VERSION "3.4.2-p0"    
-    URL "https://github.com/luxonis/libarchive/archive/ace98b6abd6790eb43f043aaa261e468a3f44cd2.tar.gz"
-    SHA1 "8996d316f21b88b38cec026eef56aa0fd1fd5008"
+    VERSION "3.4.2-p2"
+    URL "https://github.com/luxonis/libarchive/archive/cf2caf0588fc5e2af22cae37027d3ff6902e096f.tar.gz"
+    SHA1 "e99477d32ce14292fe652dc5f4f460d3af8fbc93"
     CMAKE_ARGS
-        CMAKE_POSITION_INDEPENDENT_CODE=ON
         ENABLE_ACL=OFF                                           
         ENABLE_BZip2=OFF                                          
         ENABLE_CAT=OFF                                          

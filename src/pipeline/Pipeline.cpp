@@ -128,7 +128,50 @@ PipelineSchema PipelineImpl::getPipelineSchema() const {
         info.id = node->id;
         info.name = node->getName();
         info.properties = node->getProperties();
-        schema.nodes.push_back(info);
+
+        // Create Io information
+        auto inputs = node->getInputs();
+        auto outputs = node->getOutputs();
+
+        info.ioInfo.reserve(inputs.size() + outputs.size());
+
+        // Add inputs
+        for(const auto& input : inputs) {
+            NodeIoInfo io;
+            io.blocking = input.getBlocking();
+            io.queueSize = input.getQueueSize();
+            io.name = input.name;
+            switch(input.type) {
+                case Node::Input::Type::MReceiver:
+                    io.type = NodeIoInfo::Type::MReceiver;
+                    break;
+                case Node::Input::Type::SReceiver:
+                    io.type = NodeIoInfo::Type::SReceiver;
+                    break;
+            }
+
+            info.ioInfo[io.name] = io;
+        }
+
+        // Add outputs
+        for(const auto& output : outputs) {
+            NodeIoInfo io;
+            io.blocking = false;
+            io.name = output.name;
+            switch(output.type) {
+                case Node::Output::Type::MSender:
+                    io.type = NodeIoInfo::Type::MSender;
+                    break;
+                case Node::Output::Type::SSender:
+                    io.type = NodeIoInfo::Type::SSender;
+                    break;
+            }
+
+            info.ioInfo[io.name] = io;
+        }
+
+        // At the end, add the constructed node information to the schema
+        schema.nodes[info.id] = info;
     }
 
     // Create 'connections' info
@@ -219,11 +262,13 @@ void PipelineImpl::remove(std::shared_ptr<Node> toRemove) {
 
             // 1. Iterate and remove this nodes output connections
             for(auto& kv : nodeConnectionMap) {
-                for(auto& conn : kv.second) {
+                for(auto it = kv.second.begin(); it != kv.second.end();) {
                     // check if output belongs to 'toRemove' node
-                    if(conn.outputId == toRemove->id) {
+                    if(it->outputId == toRemove->id) {
                         // remove this connection from set
-                        kv.second.erase(conn);
+                        it = kv.second.erase(it);
+                    } else {
+                        ++it;
                     }
                 }
             }

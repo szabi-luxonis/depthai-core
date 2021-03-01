@@ -3,28 +3,59 @@
 #include <depthai/pipeline/Node.hpp>
 
 // shared
-#include <depthai-shared/pb/properties/XLinkInProperties.hpp>
+#include <depthai-shared/properties/XLinkInProperties.hpp>
 
 namespace dai {
 namespace node {
-    class XLinkIn : public Node {
-        dai::XLinkInProperties properties;
 
-        std::string getName() override;
-        std::vector<Input> getInputs() override;
-        std::vector<Output> getOutputs() override;
-        nlohmann::json getProperties() override;
-        std::shared_ptr<Node> clone() override;
+/**
+ * @brief XLinkIn node. Receives messages over XLink.
+ */
+class XLinkIn : public Node {
+    dai::XLinkInProperties properties;
 
-       public:
-        XLinkIn(const std::shared_ptr<PipelineImpl>& par, int64_t nodeId);
+    std::string getName() const override;
+    std::vector<Input> getInputs() override;
+    std::vector<Output> getOutputs() override;
+    nlohmann::json getProperties() override;
+    std::shared_ptr<Node> clone() override;
 
-        Output out{*this, "out", Output::Type::MSender, {{DatatypeEnum::Buffer, true}}};
+   public:
+    XLinkIn(const std::shared_ptr<PipelineImpl>& par, int64_t nodeId);
 
-        void setStreamName(const std::string& name);
-        void setMaxDataSize(std::uint32_t maxDataSize);
-        void setNumFrames(std::uint32_t numFrames);
-    };
+    /**
+     * Outputs message of same type as send from host.
+     */
+    Output out{*this, "out", Output::Type::MSender, {{DatatypeEnum::Buffer, true}}};
+
+    /**
+     * Specifies XLink stream name to use.
+     *
+     * The name should not start with double underscores '__',
+     * as those are reserved for internal use.
+     * @param name Stream name
+     */
+    void setStreamName(const std::string& name);
+
+    /**
+     * Set maximum message size it can receive
+     * @param maxDataSize Maximum size in bytes
+     */
+    void setMaxDataSize(std::uint32_t maxDataSize);
+
+    /**
+     * Set number of frames in pool for sending messages forward
+     * @param numFrames Maximum number of frames in pool
+     */
+    void setNumFrames(std::uint32_t numFrames);
+
+    /// Get stream name
+    std::string getStreamName() const;
+    /// Get maximum messages size in bytes
+    std::uint32_t getMaxDataSize() const;
+    /// Get number of frames in pool
+    std::uint32_t getNumFrames() const;
+};
 
 }  // namespace node
 }  // namespace dai

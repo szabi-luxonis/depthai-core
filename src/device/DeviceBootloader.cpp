@@ -7,8 +7,8 @@
 #include "depthai-bootloader-shared/Bootloader.hpp"
 #include "depthai-bootloader-shared/SBR.h"
 #include "depthai-bootloader-shared/XLinkConstants.hpp"
-#include "depthai-shared/Assets.hpp"
 #include "depthai-shared/datatype/RawImgFrame.hpp"
+#include "depthai-shared/pipeline/Assets.hpp"
 #include "depthai-shared/xlink/XLinkConstants.hpp"
 
 // project
@@ -16,6 +16,9 @@
 #include "pipeline/Pipeline.hpp"
 #include "utility/BootloaderHelper.hpp"
 #include "utility/Resources.hpp"
+
+// libraries
+#include "spdlog/spdlog.h"
 
 // Resource compiled assets (cmds)
 #ifdef DEPTHAI_RESOURCE_COMPILED_BINARIES
@@ -147,12 +150,6 @@ DeviceBootloader::DeviceBootloader(const DeviceInfo& devInfo, const std::string&
     init(false, pathToBootloader);
 }
 
-DeviceBootloader::~DeviceBootloader() {
-    // Stop watchdog first
-    watchdogRunning = false;
-    if(watchdogThread.joinable()) watchdogThread.join();
-}
-
 void DeviceBootloader::init(bool embeddedMvcmd, const std::string& pathToMvcmd) {
     // Init device (if bootloader, handle correctly - issue USB boot command)
     if(deviceInfo.state == X_LINK_UNBOOTED) {
@@ -182,14 +179,14 @@ void DeviceBootloader::init(bool embeddedMvcmd, const std::string& pathToMvcmd) 
     // prepare watchdog thread, which will keep device alive
     watchdogThread = std::thread([this]() {
         // prepare watchdog thread
-        connection->openStream(bootloader::XLINK_CHANNEL_WATCHDOG, 64);
+        XLinkStream stream(*connection, bootloader::XLINK_CHANNEL_WATCHDOG, 64);
 
         std::shared_ptr<XLinkConnection> conn = this->connection;
         std::vector<uint8_t> watchdogKeepalive = {0, 0, 0, 0};
         std::vector<uint8_t> reset = {1, 0, 0, 0};
         while(watchdogRunning) {
             try {
-                connection->writeToStream(bootloader::XLINK_CHANNEL_WATCHDOG, watchdogKeepalive);
+                stream.write(watchdogKeepalive);
             } catch(const std::exception& ex) {
                 break;
             }
@@ -199,9 +196,9 @@ void DeviceBootloader::init(bool embeddedMvcmd, const std::string& pathToMvcmd) 
 
         try {
             // Send reset request
-            connection->writeToStream(bootloader::XLINK_CHANNEL_WATCHDOG, reset);
+            stream.write(reset);
             // Dummy read (wait till link falls down)
-            connection->readFromStreamRaw(bootloader::XLINK_CHANNEL_WATCHDOG);
+            stream.readRaw();
         } catch(const std::exception& error) {
         }  // ignore
 
@@ -210,7 +207,43 @@ void DeviceBootloader::init(bool embeddedMvcmd, const std::string& pathToMvcmd) 
     });
 
     // prepare bootloader stream
-    connection->openStream(bootloader::XLINK_CHANNEL_BOOTLOADER, bootloader::XLINK_STREAM_MAX_SIZE);
+    stream = std::unique_ptr<XLinkStream>(new XLinkStream(*connection, bootloader::XLINK_CHANNEL_BOOTLOADER, bootloader::XLINK_STREAM_MAX_SIZE));
+}
+
+void DeviceBootloader::close() {
+    // Only allow to close once
+    if(closed.exchange(true)) return;
+
+    using namespace std::chrono;
+    auto t1 = steady_clock::now();
+    spdlog::debug("DeviceBootloader about to be closed...");
+
+    // Close connection first (so queues unblock)
+    connection->close();
+    connection = nullptr;
+
+    // Stop watchdog
+    watchdogRunning = false;
+
+    // Stop watchdog first (this resets and waits for link to fall down)
+    if(watchdogThread.joinable()) watchdogThread.join();
+
+    // Close stream
+    stream = nullptr;
+
+    spdlog::debug("DeviceBootloader closed, {}", duration_cast<milliseconds>(steady_clock::now() - t1).count());
+}
+
+bool DeviceBootloader::isClosed() const {
+    return closed || !watchdogRunning;
+}
+
+void DeviceBootloader::checkClosed() const {
+    if(isClosed()) throw std::invalid_argument("DeviceBootloader already closed or disconnected");
+}
+
+DeviceBootloader::~DeviceBootloader() {
+    close();
 }
 
 DeviceBootloader::Version DeviceBootloader::getEmbeddedBootloaderVersion() {
@@ -218,7 +251,7 @@ DeviceBootloader::Version DeviceBootloader::getEmbeddedBootloaderVersion() {
 }
 
 DeviceBootloader::Version DeviceBootloader::getVersion() {
-    streamId_t streamId = connection->getStreamId(bootloader::XLINK_CHANNEL_BOOTLOADER);
+    streamId_t streamId = stream->getStreamId();
 
     // Send request to jump to USB bootloader
     if(!sendBootloaderRequest(streamId, bootloader::request::GetBootloaderVersion{})) {
@@ -239,8 +272,14 @@ std::tuple<bool, std::string> DeviceBootloader::flash(std::function<void(float)>
     return flashDepthaiApplicationPackage(progressCb, createDepthaiApplicationPackage(pipeline));
 }
 
+void DeviceBootloader::saveDepthaiApplicationPackage(std::string path, Pipeline& pipeline, std::string pathToCmd) {
+    auto dap = createDepthaiApplicationPackage(pipeline, pathToCmd);
+    std::ofstream outfile(path, std::ios::out | std::ios::binary);
+    outfile.write(reinterpret_cast<const char*>(dap.data()), dap.size());
+}
+
 std::tuple<bool, std::string> DeviceBootloader::flashDepthaiApplicationPackage(std::function<void(float)> progressCb, std::vector<uint8_t> package) {
-    streamId_t streamId = connection->getStreamId(bootloader::XLINK_CHANNEL_BOOTLOADER);
+    streamId_t streamId = stream->getStreamId();
 
     // send request to FLASH BOOTLOADER
     dai::bootloader::request::UpdateFlash updateFlash;
@@ -250,7 +289,7 @@ std::tuple<bool, std::string> DeviceBootloader::flashDepthaiApplicationPackage(s
     if(!sendBootloaderRequest(streamId, updateFlash)) return {false, "Couldn't send bootloader flash request"};
 
     // After that send numPackets of data
-    connection->writeToStreamSplit(bootloader::XLINK_CHANNEL_BOOTLOADER, package.data(), package.size(), bootloader::XLINK_STREAM_MAX_SIZE);
+    stream->writeSplit(package.data(), package.size(), bootloader::XLINK_STREAM_MAX_SIZE);
 
     // Then wait for response by bootloader
     // Wait till FLASH_COMPLETE response
@@ -289,7 +328,7 @@ std::tuple<bool, std::string> DeviceBootloader::flashBootloader(std::function<vo
     }
 
     // get streamId
-    streamId_t streamId = connection->getStreamId(bootloader::XLINK_CHANNEL_BOOTLOADER);
+    streamId_t streamId = stream->getStreamId();
 
     // send request to FLASH BOOTLOADER
     dai::bootloader::request::UpdateFlash updateFlash;
@@ -299,7 +338,7 @@ std::tuple<bool, std::string> DeviceBootloader::flashBootloader(std::function<vo
     if(!sendBootloaderRequest(streamId, updateFlash)) return {false, "Couldn't send bootloader flash request"};
 
     // After that send numPackets of data
-    connection->writeToStreamSplit(bootloader::XLINK_CHANNEL_BOOTLOADER, package.data(), package.size(), bootloader::XLINK_STREAM_MAX_SIZE);
+    stream->writeSplit(package.data(), package.size(), bootloader::XLINK_STREAM_MAX_SIZE);
 
     // Then wait for response by bootloader
     // Wait till FLASH_COMPLETE response
@@ -332,11 +371,9 @@ bool DeviceBootloader::isEmbeddedVersion() {
     return isEmbedded;
 }
 
-
 std::vector<std::uint8_t> DeviceBootloader::getEmbeddedBootloaderBinary() {
     return Resources::getInstance().getBootloaderFirmware();
 }
-
 
 DeviceBootloader::Version::Version(const std::string& v) : versionMajor(0), versionMinor(0), versionPatch(0) {
     // Parse string

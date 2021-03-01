@@ -6,72 +6,99 @@
 namespace dai {
 namespace node {
 
-    NeuralNetwork::NeuralNetwork(const std::shared_ptr<PipelineImpl>& par, int64_t nodeId) : Node(par, nodeId) {}
+NeuralNetwork::NeuralNetwork(const std::shared_ptr<PipelineImpl>& par, int64_t nodeId) : Node(par, nodeId) {}
 
-    std::string NeuralNetwork::getName() {
-        return "NeuralNetwork";
-    }
+std::string NeuralNetwork::getName() const {
+    return "NeuralNetwork";
+}
 
-    std::vector<Node::Output> NeuralNetwork::getOutputs() {
-        return {out};
-    }
+std::vector<Node::Output> NeuralNetwork::getOutputs() {
+    return {out};
+}
 
-    std::vector<Node::Input> NeuralNetwork::getInputs() {
-        return {input};
-    }
+std::vector<Node::Input> NeuralNetwork::getInputs() {
+    return {input};
+}
 
-    nlohmann::json NeuralNetwork::getProperties() {
-        nlohmann::json j;
-        nlohmann::to_json(j, properties);
-        return j;
-    }
+dai::NeuralNetworkProperties& NeuralNetwork::getPropertiesRef() {
+    return properties;
+}
 
-    std::shared_ptr<Node> NeuralNetwork::clone() {
-        return std::make_shared<std::decay<decltype(*this)>::type>(*this);
-    }
+nlohmann::json NeuralNetwork::getProperties() {
+    nlohmann::json j;
+    NeuralNetworkProperties& properties = getPropertiesRef();
+    nlohmann::to_json(j, properties);
+    return j;
+}
 
-    tl::optional<OpenVINO::Version> NeuralNetwork::getRequiredOpenVINOVersion() {
-        return networkOpenvinoVersion;
-    }
+std::shared_ptr<Node> NeuralNetwork::clone() {
+    return std::make_shared<std::decay<decltype(*this)>::type>(*this);
+}
 
-    void NeuralNetwork::loadBlob(const std::string& path) {
-        // Each Node has its own asset manager
+tl::optional<OpenVINO::Version> NeuralNetwork::getRequiredOpenVINOVersion() {
+    return networkOpenvinoVersion;
+}
 
-        // Load blob in blobPath into asset
-        // And mark in properties where to look for it
-        std::ifstream blobStream(blobPath, std::ios::in | std::ios::binary);
-        if(!blobStream.is_open()) throw std::runtime_error("NeuralNetwork node | Blob at path: " + blobPath + " doesn't exist");
+NeuralNetwork::BlobAssetInfo NeuralNetwork::loadBlob(const std::string& path) {
+    // Each Node has its own asset manager
 
-        // Create an asset (alignment 64)
-        Asset blobAsset;
-        blobAsset.alignment = 64;
-        blobAsset.data = std::vector<std::uint8_t>(std::istreambuf_iterator<char>(blobStream), {});
+    // Load blob in blobPath into asset
+    // And mark in properties where to look for it
+    std::ifstream blobStream(blobPath, std::ios::in | std::ios::binary);
+    if(!blobStream.is_open()) throw std::runtime_error("NeuralNetwork node | Blob at path: " + blobPath + " doesn't exist");
 
-        // Read blobs header to determine openvino version
-        BlobReader reader;
-        reader.parse(blobAsset.data);
-        networkOpenvinoVersion = OpenVINO::getBlobLatestSupportedVersion(reader.getVersionMajor(), reader.getVersionMinor());
+    // Create an asset (alignment 64)
+    Asset blobAsset;
+    blobAsset.alignment = 64;
+    blobAsset.data = std::vector<std::uint8_t>(std::istreambuf_iterator<char>(blobStream), {});
 
-        // Create asset key
-        std::string assetKey = std::to_string(id) + "/blob";
+    // Read blobs header to determine openvino version
+    BlobReader reader;
+    reader.parse(blobAsset.data);
+    networkOpenvinoVersion = OpenVINO::getBlobLatestSupportedVersion(reader.getVersionMajor(), reader.getVersionMinor());
 
-        // set asset (replaces previous asset without throwing)
-        assetManager.set(assetKey, blobAsset);
+    // Create asset key
+    std::string assetKey = std::to_string(id) + "/blob";
 
-        // Set properties URI to asset:id/blob
-        properties.blobUri = std::string("asset:") + assetKey;
-        properties.blobSize = blobAsset.data.size();
-    }
+    // set asset (replaces previous asset without throwing)
+    assetManager.set(assetKey, blobAsset);
 
-    // Specify local filesystem path to load the blob (which gets loaded at loadAssets)
-    void NeuralNetwork::setBlobPath(const std::string& path) {
-        blobPath = path;
-        loadBlob(path);
-    }
+    // Set properties URI to asset:id/blob
+    BlobAssetInfo blobInfo;
+    blobInfo.uri = std::string("asset:") + assetKey;
+    blobInfo.size = blobAsset.data.size();
 
-    void NeuralNetwork::setNumPoolFrames(int numFrames) {
-        properties.numFrames = numFrames;
-    }
+    return blobInfo;
+}
+
+// Specify local filesystem path to load the blob (which gets loaded at loadAssets)
+void NeuralNetwork::setBlobPath(const std::string& path) {
+    blobPath = path;
+    BlobAssetInfo blobInfo = loadBlob(path);
+    NeuralNetworkProperties& properties = getPropertiesRef();
+    properties.blobUri = blobInfo.uri;
+    properties.blobSize = blobInfo.size;
+}
+
+void NeuralNetwork::setNumPoolFrames(int numFrames) {
+    NeuralNetworkProperties& properties = getPropertiesRef();
+    properties.numFrames = numFrames;
+}
+
+void NeuralNetwork::setNumInferenceThreads(int numThreads) {
+    NeuralNetworkProperties& properties = getPropertiesRef();
+    properties.numThreads = numThreads;
+}
+
+void NeuralNetwork::setNumNCEPerInferenceThread(int numNCEPerThread) {
+    NeuralNetworkProperties& properties = getPropertiesRef();
+    properties.numNCEPerThread = numNCEPerThread;
+}
+
+int NeuralNetwork::getNumInferenceThreads() {
+    NeuralNetworkProperties& properties = getPropertiesRef();
+    return properties.numThreads;
+}
 
 }  // namespace node
 }  // namespace dai
