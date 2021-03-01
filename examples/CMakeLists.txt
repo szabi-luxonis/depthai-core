@@ -71,13 +71,13 @@ endmacro()
 ## message(STATUS "Location of test1.data: ${test1_data}")
 
 # Color camera preview output example
-dai_add_example(camera_preview src/camera_preview_example.cpp)
+dai_add_example(camera_preview src/01_rgb_preview.cpp)
 
 # Color camera video output example
 dai_add_example(camera_video src/camera_video_example.cpp)
 
 # Mono camera video output example
-dai_add_example(mono_camera src/mono_camera_example.cpp)
+dai_add_example(mono_camera src/02_mono_preview.cpp)
 
 # NeuralNetwork node, mobilenet example
 hunter_private_data(
