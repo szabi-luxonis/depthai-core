@@ -78,7 +78,7 @@ hunter_private_data(
     LOCATION tiny_yolo_v3_blob
 )
 
-dai_add_example(camera_mobilenet src/camera_mobilenet_example.cpp)
+dai_add_example(camera_mobilenet src/08_rgb_mobilenet)
 target_compile_definitions(camera_mobilenet PRIVATE BLOB_PATH="${mobilenet_blob}")
 
 # NeuralNetwork node, webcam input (from host)
