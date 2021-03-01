@@ -89,7 +89,7 @@ target_compile_definitions(webcam_mobilenet PRIVATE BLOB_PATH="${mobilenet_blob}
 dai_add_example(mjpeg_encoding src/mjpeg_encoding_example.cpp)
 
 # h264 encoding
-dai_add_example(h264_encoding src/h264_encoding_example.cpp)
+dai_add_example(h265_encoding src/04_rgb_encoding.cpp)
 
 # StereoDepth example
 dai_add_example(stereo src/stereo_example.cpp)
@@ -105,13 +105,13 @@ dai_add_example(color_camera_control src/color_camera_control_example.cpp)
 dai_add_example(system_information src/system_information_example.cpp)
 
 # Device getQueueEvent example
-dai_add_example(device_queue_event src/device_queue_event_example.cpp)
+dai_add_example(device_queue_event src/16_device_queue_event.cpp)
 
 # OpenCV support example
 dai_add_example(opencv_support src/opencv_support_example.cpp)
 
 # Device side decoding example for mobilenet-ssd
-dai_add_example(mobilenet_device_side_decoding src/mobilenet_device_side_decoding_example.cpp)
+dai_add_example(mobilenet_device_side_decoding src/21_mobilenet_decoding_on_device.cpp)
 target_compile_definitions(mobilenet_device_side_decoding PRIVATE BLOB_PATH="${mobilenet_blob}")
 
 # Device side decoding example for tiny-yolo-v3
