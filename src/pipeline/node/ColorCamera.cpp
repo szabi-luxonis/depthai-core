@@ -23,7 +23,7 @@ std::string ColorCamera::getName() const {
 }
 
 std::vector<Node::Output> ColorCamera::getOutputs() {
-    return {video, preview, still};
+    return {raw, isp, video, preview, still};
 }
 
 std::vector<Node::Input> ColorCamera::getInputs() {
@@ -122,16 +122,47 @@ void ColorCamera::setPreviewSize(int width, int height) {
     properties.previewHeight = height;
 }
 
+void ColorCamera::setPreviewSize(std::tuple<int, int> size) {
+    setPreviewSize(std::get<0>(size), std::get<1>(size));
+}
+
 // set video output size
 void ColorCamera::setVideoSize(int width, int height) {
     properties.videoWidth = width;
     properties.videoHeight = height;
 }
 
+void ColorCamera::setVideoSize(std::tuple<int, int> size) {
+    setVideoSize(std::get<0>(size), std::get<1>(size));
+}
+
 // set still output size
 void ColorCamera::setStillSize(int width, int height) {
     properties.stillWidth = width;
     properties.stillHeight = height;
+}
+
+void ColorCamera::setStillSize(std::tuple<int, int> size) {
+    setStillSize(std::get<0>(size), std::get<1>(size));
+}
+
+void ColorCamera::setIspScale(int horizNum, int horizDenom, int vertNum, int vertDenom) {
+    properties.ispScale.horizNumerator = horizNum;
+    properties.ispScale.horizDenominator = horizDenom;
+    properties.ispScale.vertNumerator = vertNum;
+    properties.ispScale.vertDenominator = vertDenom;
+}
+
+void ColorCamera::setIspScale(int numerator, int denominator) {
+    setIspScale(numerator, denominator, numerator, denominator);
+}
+
+void ColorCamera::setIspScale(std::tuple<int, int> scale) {
+    setIspScale(std::get<0>(scale), std::get<1>(scale));
+}
+
+void ColorCamera::setIspScale(std::tuple<int, int> horizScale, std::tuple<int, int> vertScale) {
+    setIspScale(std::get<0>(horizScale), std::get<1>(horizScale), std::get<0>(vertScale), std::get<1>(vertScale));
 }
 
 void ColorCamera::setResolution(ColorCameraProperties::SensorResolution resolution) {
@@ -249,6 +280,34 @@ int ColorCamera::getResolutionWidth() const {
 
 int ColorCamera::getResolutionHeight() const {
     return std::get<1>(getResolutionSize());
+}
+
+int ColorCamera::getScaledSize(int input, int num, int denom) const {
+    return (input * num - 1) / denom + 1;
+}
+
+int ColorCamera::getIspWidth() const {
+    int inW = getResolutionWidth();
+    int num = properties.ispScale.horizNumerator;
+    int den = properties.ispScale.horizDenominator;
+    if(num > 0 && den > 0) {
+        return getScaledSize(inW, num, den);
+    }
+    return inW;
+}
+
+int ColorCamera::getIspHeight() const {
+    int inH = getResolutionHeight();
+    int num = properties.ispScale.vertNumerator;
+    int den = properties.ispScale.vertDenominator;
+    if(num > 0 && den > 0) {
+        return getScaledSize(inH, num, den);
+    }
+    return inH;
+}
+
+std::tuple<int, int> ColorCamera::getIspSize() const {
+    return {getIspWidth(), getIspHeight()};
 }
 
 void ColorCamera::sensorCenterCrop() {
