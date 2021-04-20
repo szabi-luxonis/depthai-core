@@ -152,6 +152,17 @@ class StereoDepth : public Node {
     void setRectifyMirrorFrame(bool enable);
 
     /**
+     * Sets left camera socket id
+     * @param leftCam Camera Id of the left camera of the stereo setup
+     */
+    void setLeftCameraSocket(dai::CameraBoardSocket leftCam);
+
+    /**
+     * Sets right camera socket id
+     * @param rightCam Camera Id of the right camera of the stereo setup
+     */
+    void setRightCameraSocket(dai::CameraBoardSocket rightCam);
+    /**
      * Enable outputting rectified frames. Optimizes computation on device side when disabled.
      * DEPRECATED. The outputs are auto-enabled if used
      */

@@ -61,6 +61,14 @@ void StereoDepth::setEmptyCalibration(void) {
     properties.calibration = empty;
 }
 
+void setLeftCameraSocket(dai::CameraBoardSocket leftCam){
+    properties.leftCameraSocket = leftCam;
+}
+
+void setRightCameraSocket(dai::CameraBoardSocket rightCam){
+    properties.rightCameraSocket = rightCam;
+}
+
 void StereoDepth::setInputResolution(int width, int height) {
     properties.width = width;
     properties.height = height;
