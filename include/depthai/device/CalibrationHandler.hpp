@@ -59,7 +59,7 @@ class CalibrationHandler {
      * @return std::vector<std::vector<float>> - repesents the 3x3 intrinsics matrix of the respective camera at the requested size and crop dimensions.
      */
     std::vector<std::vector<float>> getCameraIntrinsics(
-        CameraBoardSocket cameraId, int resizewidth = -1, int resizeHeight = -1, Point2f topLeftPixelId = Point2f(), Point2f bottomRightPixelId = Point2f());
+        CameraBoardSocket cameraId, int resizeWidth = -1, int resizeHeight = -1, Point2f topLeftPixelId = Point2f(), Point2f bottomRightPixelId = Point2f());
 
     /**
      * @brief Get the Camera Intrinsics object
@@ -72,9 +72,10 @@ class CalibrationHandler {
      * the respective cropped image
      * @return std::vector<std::vector<float>> - repesents the 3x3 intrinsics matrix of the respective camera at the requested size and crop dimensions.
      */
-    std::vector<std::vector<float>> getCameraIntrinsics(
-        CameraBoardSocket cameraId, Size2f destShape, Point2f topLeftPixelId = Point2f(), Point2f bottomRightPixelId = Point2f());
-
+    std::vector<std::vector<float>> getCameraIntrinsics(CameraBoardSocket cameraId,
+                                                        Size2f destShape,
+                                                        Point2f topLeftPixelId = Point2f(),
+                                                        Point2f bottomRightPixelId = Point2f());
 
     /**
      * @brief Get the Default Intrinsics object
@@ -145,17 +146,17 @@ class CalibrationHandler {
 
     // TODO (Sachin) : Fill therse docstrings
     /**
-     * 
+     *
      * @brief Get the Stereo Right Rectification Rotation object
-     * 
-     * @return std::vector<std::vector<float>> 
+     *
+     * @return std::vector<std::vector<float>>
      */
     std::vector<std::vector<float>> getStereoRightRectificationRotation();
 
     /**
      * @brief Get the Stereo Left Rectification Rotation object
-     * 
-     * @return std::vector<std::vector<float>> 
+     *
+     * @return std::vector<std::vector<float>>
      */
     std::vector<std::vector<float>> getStereoLeftRectificationRotation();
     // getStereoLeftCameraId();
@@ -230,6 +231,14 @@ class CalibrationHandler {
      * @param hfov - Horizontal fov of the camera from Camera Datasheet
      */
     void setFov(CameraBoardSocket cameraId, double hfov);
+
+    /**
+     * @brief Sets the distortion Coefficients obtained from camera calibration
+     *
+     * @param cameraId - Camera Id of the camera
+     * @param lensPosition - lens posiotion value of the camera at the time of calibration
+     */
+    void setlensPosition(CameraBoardSocket cameraId, uint8_t lensPosition);
 
     // /**
     //  * @brief Set the Camera Type object
