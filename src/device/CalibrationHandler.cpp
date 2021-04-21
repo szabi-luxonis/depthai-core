@@ -273,8 +273,7 @@ std::vector<std::vector<float>> CalibrationHandler::getImuToCameraExtrinsics(Cam
     }
 }
 
-// FIXME(sachin): Does inverse works on the 4x4 projection matrix since it is in homogeneous  coordinate system? I think yes but corss check once
-// TODO(sachin) : Add a loop checker to make sure lin found doesnt go into infinite loop
+
 std::vector<std::vector<float>> CalibrationHandler::getCameraExtrinsics(CameraBoardSocket srcCamera, CameraBoardSocket dstCamera, bool useMeasuredTranslation) {
     /**
      * 1. Check if both camera ID exists.
