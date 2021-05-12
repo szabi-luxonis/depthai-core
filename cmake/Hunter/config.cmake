@@ -10,8 +10,8 @@ hunter_config(
 hunter_config(
     XLink
     VERSION "luxonis-2020.2-bootloader"
-    URL "https://github.com/luxonis/XLink/archive/d6dd3b0a5a8d8e717892970bd24c41f3e7080811.tar.gz"
-    SHA1 "134e8e699636ec162a520d2b7e24f7cdfc8c8560"
+    URL "https://github.com/luxonis/XLink/archive/3f8c17eef960d0a76fcb8f78581407d74dade2c7.tar.gz"
+    SHA1 "00494618711aa285282af1c9937e39f42e568680"
     CMAKE_ARGS
         CMAKE_POSITION_INDEPENDENT_CODE=ON
 )

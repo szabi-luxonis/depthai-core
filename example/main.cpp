@@ -24,7 +24,7 @@
 
 
 cv::Mat toMat(const std::vector<uint8_t>& data, int w, int h , int numPlanes, int bpp){
-    
+
     cv::Mat frame;
 
     if(numPlanes == 3){
@@ -35,15 +35,15 @@ cv::Mat toMat(const std::vector<uint8_t>& data, int w, int h , int numPlanes, in
             uint8_t b = data.data()[i + w*h * 0];
             frame.data[i*3+0] = b;
         }
-        for(int i = 0; i < w*h; i++) {                
-            uint8_t g = data.data()[i + w*h * 1];    
+        for(int i = 0; i < w*h; i++) {
+            uint8_t g = data.data()[i + w*h * 1];
             frame.data[i*3+1] = g;
         }
         for(int i = 0; i < w*h; i++) {
             uint8_t r = data.data()[i + w*h * 2];
             frame.data[i*3+2] = r;
         }
-                    
+
     } else {
         if(bpp == 3){
             frame = cv::Mat(h, w, CV_8UC3);
@@ -51,26 +51,26 @@ cv::Mat toMat(const std::vector<uint8_t>& data, int w, int h , int numPlanes, in
                 uint8_t b,g,r;
                 b = data.data()[i + 2];
                 g = data.data()[i + 1];
-                r = data.data()[i + 0];    
+                r = data.data()[i + 0];
                 frame.at<cv::Vec3b>( (i/bpp) / w, (i/bpp) % w) = cv::Vec3b(b,g,r);
             }
 
         } else if(bpp == 6) {
             //first denormalize
             //dump
-            
+
             frame = cv::Mat(h, w, CV_8UC3);
             for(int y = 0; y < h; y++){
                 for(int x = 0; x < w; x++){
 
-                    const uint16_t* fp16 = (const uint16_t*) (data.data() + (y*w+x)*bpp);                        
+                    const uint16_t* fp16 = (const uint16_t*) (data.data() + (y*w+x)*bpp);
                     uint8_t r = (uint8_t) (fp16_ieee_to_fp32_value(fp16[0]) * 255.0f);
                     uint8_t g = (uint8_t) (fp16_ieee_to_fp32_value(fp16[1]) * 255.0f);
                     uint8_t b = (uint8_t) (fp16_ieee_to_fp32_value(fp16[2]) * 255.0f);
                     frame.at<cv::Vec3b>(y, x) = cv::Vec3b(b,g,r);
                 }
             }
-            
+
         }
     }
 
@@ -93,7 +93,7 @@ void toPlanar(cv::Mat& bgr, std::vector<std::uint8_t>& data){
 
 /*
     std::vector<cv::Mat> planes(3);
-    for(unsigned int i = 0; planes.size(); i++){ 
+    for(unsigned int i = 0; planes.size(); i++){
         cv::extractChannel(bgr, planes[i], i);
     }
 
@@ -144,7 +144,7 @@ dai::Pipeline createNNPipeline(std::string nnPath){
     nn1->setBlobPath(nnPath);
 
     xlinkOut->setStreamName("preview");
-    nnOut->setStreamName("detections");    
+    nnOut->setStreamName("detections");
 
     colorCam->setPreviewSize(300, 300);
     colorCam->setResolution(dai::ColorCameraProperties::SensorResolution::THE_1080_P);
@@ -170,7 +170,7 @@ dai::Pipeline createCameraPipeline(){
     auto colorCam = p.create<dai::node::ColorCamera>();
     auto xlinkOut = p.create<dai::node::XLinkOut>();
     xlinkOut->setStreamName("preview");
-    
+
     colorCam->setPreviewSize(300, 300);
     colorCam->setResolution(dai::ColorCameraProperties::SensorResolution::THE_1080_P);
     colorCam->setInterleaved(true);
@@ -178,7 +178,7 @@ dai::Pipeline createCameraPipeline(){
 
     // Link plugins CAM -> XLINK
     colorCam->preview.link(xlinkOut->input);
-    
+
     return p;
 
 }
@@ -193,7 +193,7 @@ dai::Pipeline createCameraFullPipeline(){
     auto colorCam = p.create<dai::node::ColorCamera>();
     auto xlinkOut = p.create<dai::node::XLinkOut>();
     xlinkOut->setStreamName("video");
-    
+
     colorCam->setPreviewSize(300, 300);
     colorCam->setResolution(dai::ColorCameraProperties::SensorResolution::THE_1080_P);
     colorCam->setInterleaved(true);
@@ -201,7 +201,7 @@ dai::Pipeline createCameraFullPipeline(){
 
     // Link plugins CAM -> XLINK
     colorCam->video.link(xlinkOut->input);
-    
+
     return p;
 
 }
@@ -221,7 +221,7 @@ void startPreview(){
 
         d.startPipeline(p);
 
-        
+
         cv::Mat frame;
         auto preview = d.getOutputQueue("preview");
 
@@ -233,20 +233,20 @@ void startPreview(){
                 printf("Frame - w: %d, h: %d\n", imgFrame->getWidth(), imgFrame->getHeight());
 
                 frame = cv::Mat(imgFrame->getHeight(), imgFrame->getWidth(), CV_8UC3, imgFrame->getData().data());
-                           
+
                 cv::imshow("preview", frame);
                 cv::waitKey(1);
             } else {
                 std::cout << "Not ImgFrame" << std::endl;
             }
-            
+
         }
 
     } else {
         cout << "No booted (debugger) devices found..." << endl;
     }
 
-    
+
 }
 
 void startVideo(){
@@ -264,7 +264,7 @@ void startVideo(){
 
         d.startPipeline(p);
 
-        
+
         cv::Mat frame;
         auto preview = d.getOutputQueue("preview");
         auto detections = d.getOutputQueue("detections");
@@ -279,17 +279,17 @@ void startVideo(){
                 printf("Frame - w: %d, h: %d\n", imgFrame->getWidth(), imgFrame->getHeight());
 
                 frame = cv::Mat(imgFrame->getHeight() * 3 / 2, imgFrame->getWidth(), CV_8UC1, imgFrame->getData().data());
-                
+
                 cv::Mat rgb(imgFrame->getHeight(), imgFrame->getWidth(), CV_8UC3);
 
                 cv::cvtColor(frame, rgb, cv::COLOR_YUV2BGR_NV12);
-                
+
                 cv::imshow("video", rgb);
                 cv::waitKey(1);
             } else {
                 std::cout << "Not ImgFrame" << std::endl;
             }
-            
+
         }
 
     } else {
@@ -314,7 +314,7 @@ void startNN(std::string nnPath){
 
         d.startPipeline(p);
 
-        
+
         cv::Mat frame;
         auto preview = d.getOutputQueue("preview");
         auto detections = d.getOutputQueue("detections");
@@ -407,7 +407,7 @@ void startWebcam(int camId, std::string nnPath){
 
     //producer->setProcessor(dai::ProcessorType::LOS);
     nn->setBlobPath(nnPath);
-    
+
     xin->setStreamName("nn_in");
     xin->setMaxDataSize(300*300*3);
     xin->setNumFrames(4);
@@ -433,15 +433,15 @@ void startWebcam(int camId, std::string nnPath){
 
         d.startPipeline(p);
 
-        
+
         cv::VideoCapture webcam(camId);
-    
+
         cv::Mat frame;
         auto in = d.getInputQueue("nn_in");
         auto detections = d.getOutputQueue("nn_out");
 
         while(1){
-            
+
             // data to send further
             auto tensor = std::make_shared<dai::RawBuffer>();
 
@@ -551,9 +551,9 @@ void startMjpegCam(){
 
     // XLinkOut
     xout->setStreamName("mjpeg");
-    xout2->setStreamName("preview");
+    //xout2->setStreamName("preview");
 
-    // ColorCamera    
+    // ColorCamera
     colorCam->setPreviewSize(300, 300);
     colorCam->setResolution(dai::ColorCameraProperties::SensorResolution::THE_1080_P);
     colorCam->setInterleaved(true);
@@ -564,7 +564,7 @@ void startMjpegCam(){
 
     // Link plugins CAM -> XLINK
     colorCam->video.link(videnc->input);
-    colorCam->preview.link(xout2->input);
+    //colorCam->preview.link(xout2->input);
     videnc->bitstream.link(xout->input);
 
 
@@ -575,41 +575,33 @@ void startMjpegCam(){
     std::tie(found, deviceInfo) = dai::XLinkConnection::getFirstDevice(X_LINK_UNBOOTED);
 
     if(found) {
+        cout << "found " << endl;
         dai::Device d(deviceInfo);
 
         d.startPipeline(p);
-    
-        auto mjpegQueue = d.getOutputQueue("mjpeg", 8, true);
-        auto previewQueue = d.getOutputQueue("preview", 8, true);
 
+        auto mjpegQueue = d.getOutputQueue("mjpeg", 30, true);
+        //auto previewQueue = d.getOutputQueue("preview", 8, true);
+        std::string h264Path("/dev/null");
+        auto myfile = std::fstream(h264Path, std::ios::out | std::ios::binary);
         while(1){
 
-            auto t1 = std::chrono::steady_clock::now();            
-            
-            auto preview = previewQueue->get<dai::ImgFrame>();
+            //auto t1 = std::chrono::steady_clock::now();
+            //auto preview = previewQueue->get<dai::ImgFrame>();
+            //auto t2 = std::chrono::steady_clock::now();
+            //cv::imshow("preview", cv::Mat(preview->fb.height, preview->fb.width, CV_8UC3, preview->data.data()));
+            //auto t3 = std::chrono::steady_clock::now();
+            auto h264 = mjpegQueue->get<dai::ImgFrame>();
+            cout << "Data size " << h264->getData().size() << endl;
+            myfile.write((char*)h264->getData().data(), h264->getData().size());
+            //auto t4 = std::chrono::steady_clock::now();
+            //cv::Mat decodedFrame = cv::imdecode( cv::Mat(mjpeg->data), cv::IMREAD_COLOR);
+            //auto t5 = std::chrono::steady_clock::now();
+            //cv::imshow("mjpeg", decodedFrame);
 
-            auto t2 = std::chrono::steady_clock::now();
-            cv::imshow("preview", cv::Mat(preview->getHeight(), preview->getWidth(), CV_8UC3, preview->getData().data()));
-            auto t3 = std::chrono::steady_clock::now();
-            auto mjpeg = mjpegQueue->get<dai::ImgFrame>();
-            auto t4 = std::chrono::steady_clock::now();
-            cv::Mat decodedFrame = cv::imdecode( cv::Mat(mjpeg->getData()), cv::IMREAD_COLOR);
-            auto t5 = std::chrono::steady_clock::now();
-            cv::imshow("mjpeg", decodedFrame);
-
-
-            double tsPreview = preview->getTimestamp().sec + preview->getTimestamp().nsec / 1000000000.0;
-            double tsMjpeg = mjpeg->getTimestamp().sec + mjpeg->getTimestamp().nsec / 1000000000.0;
 
             //for(int i = 0; i < 100; i++) cv::waitKey(1);
 
-            int ms1 = std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count();
-            int ms2 = std::chrono::duration_cast<std::chrono::milliseconds>(t3-t2).count();
-            int ms3 = std::chrono::duration_cast<std::chrono::milliseconds>(t4-t3).count();
-            int ms4 = std::chrono::duration_cast<std::chrono::milliseconds>(t5-t4).count();
-            int loop = std::chrono::duration_cast<std::chrono::milliseconds>(t5-t1).count();
-
-            std::cout << ms1 << " " << ms2 << " " << ms3 << " " << ms4 << " loop: " << loop << "sync offset: " << tsPreview << " sync mjpeg " << tsMjpeg << std::endl;
             cv::waitKey(1);
 
 
@@ -622,7 +614,6 @@ void startMjpegCam(){
 
 }
 
-
 int main(int argc, char** argv){
     using namespace std;
     cout << "Hello World!" << endl;
@@ -634,7 +625,7 @@ int main(int argc, char** argv){
         startMjpegCam();
     } else {
          std::string nnPath(argv[1]);
- 
+
         if(nnPath == "test0"){
             startTest(0);
         } else if(nnPath == "test1"){
@@ -644,7 +635,7 @@ int main(int argc, char** argv){
         } else {
             startWebcam(0, nnPath);
         }
-        
+
     }
 
     return 0;

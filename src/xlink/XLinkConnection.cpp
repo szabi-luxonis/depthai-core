@@ -50,7 +50,7 @@ std::vector<DeviceInfo> XLinkConnection::getAllConnectedDevices(XLinkDeviceState
 
     std::vector<XLinkDeviceState_t> states;
     if(state == X_LINK_ANY_STATE) {
-        states = {X_LINK_UNBOOTED, X_LINK_BOOTLOADER, X_LINK_BOOTED};
+        states = {X_LINK_UNBOOTED,  X_LINK_BOOTED};
     } else {
         states = {state};
     }
@@ -120,12 +120,12 @@ bool XLinkConnection::getRebootOnDestruction() const {
 }
 
 bool XLinkConnection::bootAvailableDevice(const deviceDesc_t& deviceToBoot, const std::string& pathToMvcmd) {
-    auto status = XLinkBoot(&deviceToBoot, pathToMvcmd.c_str());
+    auto status = XLinkBoot((deviceDesc_t*)&deviceToBoot, pathToMvcmd.c_str());
     return status == X_LINK_SUCCESS;
 }
 
 bool XLinkConnection::bootAvailableDevice(const deviceDesc_t& deviceToBoot, std::vector<std::uint8_t>& mvcmd) {
-    auto status = XLinkBootMemory(&deviceToBoot, mvcmd.data(), mvcmd.size());
+    auto status = XLinkBootMemory((deviceDesc_t*)&deviceToBoot, mvcmd.data(), mvcmd.size());
     return status == X_LINK_SUCCESS;
 }
 
@@ -399,12 +399,7 @@ DeviceInfo deviceInfoFix(const DeviceInfo& dev, XLinkDeviceState_t state) {
             break;
     }
 
-    // If bootloader state add "bootloader"
-    if(state == X_LINK_BOOTLOADER) {
-        std::strncat(fixed.desc.name, "bootloader", sizeof(fixed.desc.name) - std::strlen(fixed.desc.name));
-        // set platform to any
-        fixed.desc.platform = X_LINK_ANY_PLATFORM;
-    } else if(state == X_LINK_UNBOOTED) {
+    if(state == X_LINK_UNBOOTED) {
         // if unbooted add ending ("ma2480" or "ma2450")
         if(fixed.desc.platform == X_LINK_MYRIAD_2) {
             std::strncat(fixed.desc.name, "ma2450", sizeof(fixed.desc.name) - std::strlen(fixed.desc.name));

@@ -32,7 +32,7 @@ std::tuple<bool, DeviceInfo> DeviceBootloader::getFirstAvailableDevice() {
     DeviceInfo dev;
     std::tie(found, dev) = XLinkConnection::getFirstDevice(X_LINK_UNBOOTED);
     if(!found) {
-        std::tie(found, dev) = XLinkConnection::getFirstDevice(X_LINK_BOOTLOADER);
+        assert(0);
     }
     return {found, dev};
 }
@@ -152,63 +152,8 @@ DeviceBootloader::~DeviceBootloader() {
 }
 
 void DeviceBootloader::init(bool embeddedMvcmd, const std::string& pathToMvcmd) {
-    // Init device (if bootloader, handle correctly - issue USB boot command)
-    if(deviceInfo.state == X_LINK_UNBOOTED) {
-        // Unbooted device found, boot to BOOTLOADER and connect with XLinkConnection constructor
-        if(embeddedMvcmd) {
-            connection = std::make_shared<XLinkConnection>(deviceInfo, getEmbeddedBootloaderBinary(), X_LINK_BOOTLOADER);
-        } else {
-            connection = std::make_shared<XLinkConnection>(deviceInfo, pathToMvcmd, X_LINK_BOOTLOADER);
-        }
+    assert(0);
 
-        // Device wasn't already in bootloader, that means that embedded bootloader is booted
-        isEmbedded = true;
-
-    } else if(deviceInfo.state == X_LINK_BOOTLOADER) {
-        // Device already in bootloader mode.
-        // Connect without booting
-        connection = std::make_shared<XLinkConnection>(deviceInfo, X_LINK_BOOTLOADER);
-
-        // Device was already in bootloader, that means that embedded isn't running
-        isEmbedded = false;
-    } else {
-        throw std::runtime_error("Device not in UNBOOTED or BOOTLOADER state");
-    }
-
-    deviceInfo.state = X_LINK_BOOTLOADER;
-
-    // prepare watchdog thread, which will keep device alive
-    watchdogThread = std::thread([this]() {
-        // prepare watchdog thread
-        connection->openStream(bootloader::XLINK_CHANNEL_WATCHDOG, 64);
-
-        std::shared_ptr<XLinkConnection> conn = this->connection;
-        std::vector<uint8_t> watchdogKeepalive = {0, 0, 0, 0};
-        std::vector<uint8_t> reset = {1, 0, 0, 0};
-        while(watchdogRunning) {
-            try {
-                connection->writeToStream(bootloader::XLINK_CHANNEL_WATCHDOG, watchdogKeepalive);
-            } catch(const std::exception& ex) {
-                break;
-            }
-            // Ping with a period half of that of the watchdog timeout
-            std::this_thread::sleep_for(bootloader::XLINK_WATCHDOG_TIMEOUT / 2);
-        }
-
-        try {
-            // Send reset request
-            connection->writeToStream(bootloader::XLINK_CHANNEL_WATCHDOG, reset);
-            // Dummy read (wait till link falls down)
-            connection->readFromStreamRaw(bootloader::XLINK_CHANNEL_WATCHDOG);
-        } catch(const std::exception& error) {
-        }  // ignore
-
-        // Sleep a bit, so device isn't available anymore
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    });
-
-    // prepare bootloader stream
-    connection->openStream(bootloader::XLINK_CHANNEL_BOOTLOADER, bootloader::XLINK_STREAM_MAX_SIZE);
 }
 
 DeviceBootloader::Version DeviceBootloader::getEmbeddedBootloaderVersion() {
