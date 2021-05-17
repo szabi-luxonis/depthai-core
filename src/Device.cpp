@@ -201,7 +201,7 @@ void Device::init(bool embeddedMvcmd, bool usb2Mode, const std::string& pathToMv
 
     client = std::unique_ptr<nanorpc::core::client<nanorpc::packer::nlohmann_msgpack>>(
         new nanorpc::core::client<nanorpc::packer::nlohmann_msgpack>([this](nanorpc::core::type::buffer request) {
-            std::unique_lock<std::mutex>(this->rpcMutex);
+            std::unique_lock<std::mutex> _lock(this->rpcMutex);
             // Send request to device
             connection->writeToStream(dai::XLINK_CHANNEL_MAIN_RPC, std::move(request));
 
@@ -210,59 +210,59 @@ void Device::init(bool embeddedMvcmd, bool usb2Mode, const std::string& pathToMv
             return connection->readFromStream(dai::XLINK_CHANNEL_MAIN_RPC);
         }));
 
-    // prepare watchdog thread, which will keep device alive
-    watchdogThread = std::thread([this]() {
-        std::shared_ptr<XLinkConnection> conn = this->connection;
-        while(watchdogRunning) {
-            try {
-                client->call("watchdogKeepalive");
-            } catch(const std::exception& ex) {
-                break;
-            }
-            // Ping with a period half of that of the watchdog timeout
-            std::this_thread::sleep_for(XLINK_WATCHDOG_TIMEOUT / 2);
-        }
+    // // prepare watchdog thread, which will keep device alive
+    // watchdogThread = std::thread([this]() {
+    //     std::shared_ptr<XLinkConnection> conn = this->connection;
+    //     while(watchdogRunning) {
+    //         try {
+    //             client->call("watchdogKeepalive");
+    //         } catch(const std::exception& ex) {
+    //             break;
+    //         }
+    //         // Ping with a period half of that of the watchdog timeout
+    //         std::this_thread::sleep_for(XLINK_WATCHDOG_TIMEOUT / 2);
+    //     }
 
-        // reset device
-        // wait till link falls down
-        try {
-            client->call("reset");
-        } catch(const std::runtime_error& err) {
-            // ignore
-        }
+    //     // reset device
+    //     // wait till link falls down
+    //     try {
+    //         client->call("reset");
+    //     } catch(const std::runtime_error& err) {
+    //         // ignore
+    //     }
 
-        // Sleep a bit, so device isn't available anymore
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    });
+    //     // Sleep a bit, so device isn't available anymore
+    //     std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    // });
 
-    // prepare timesync thread, which will keep device synchronized
-    timesyncThread = std::thread([this]() {
-        using namespace std::chrono;
-        std::shared_ptr<XLinkConnection> conn = this->connection;
-        std::string streamName = XLINK_CHANNEL_TIMESYNC;
+    // // prepare timesync thread, which will keep device synchronized
+    // timesyncThread = std::thread([this]() {
+    //     using namespace std::chrono;
+    //     std::shared_ptr<XLinkConnection> conn = this->connection;
+    //     std::string streamName = XLINK_CHANNEL_TIMESYNC;
 
-        try {
-            conn->openStream(streamName, 128);
-            Timestamp timestamp = {};
-            while(timesyncRunning) {
-                // Block
-                conn->readFromStream(streamName);
+    //     try {
+    //         conn->openStream(streamName, 128);
+    //         Timestamp timestamp = {};
+    //         while(timesyncRunning) {
+    //             // Block
+    //             conn->readFromStream(streamName);
 
-                // Timestamp
-                auto d = std::chrono::steady_clock::now().time_since_epoch();
-                timestamp.sec = duration_cast<seconds>(d).count();
-                timestamp.nsec = duration_cast<nanoseconds>(d).count() % 1000000000;
+    //             // Timestamp
+    //             auto d = std::chrono::steady_clock::now().time_since_epoch();
+    //             timestamp.sec = duration_cast<seconds>(d).count();
+    //             timestamp.nsec = duration_cast<nanoseconds>(d).count() % 1000000000;
 
-                // Write timestamp back
-                conn->writeToStream(streamName, &timestamp, sizeof(timestamp));
-            }
-            conn->closeStream(streamName);
-        } catch(const std::exception& ex) {
-            // ignore
-        }
+    //             // Write timestamp back
+    //             conn->writeToStream(streamName, &timestamp, sizeof(timestamp));
+    //         }
+    //         conn->closeStream(streamName);
+    //     } catch(const std::exception& ex) {
+    //         // ignore
+    //     }
 
-        timesyncRunning = false;
-    });
+    //     timesyncRunning = false;
+    // });
 }
 
 std::shared_ptr<DataOutputQueue> Device::getOutputQueue(const std::string& name, unsigned int maxSize, bool overwrite) {
